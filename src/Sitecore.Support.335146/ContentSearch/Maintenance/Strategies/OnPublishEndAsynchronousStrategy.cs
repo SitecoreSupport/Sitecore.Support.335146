@@ -7,7 +7,8 @@
     using Sitecore.Data.Eventing.Remote;
     using Sitecore.Diagnostics;
     using System.Collections.Generic;
-    using System.Linq;    
+    using System.Linq;
+    using System;
 
     public class OnPublishEndAsynchronousStrategy : Sitecore.ContentSearch.Maintenance.Strategies.OnPublishEndAsynchronousStrategy
     {
@@ -35,6 +36,13 @@
                     }
                     else
                     {
+                        // Sitecore.Support.335146+++
+                        if (!IsValid(datum.RemoteEvent))
+                        {
+                            continue;
+                        }
+                        // Sitecore.Support.335146---
+
                         UpdateIndexableInfo(datum.RemoteEvent, indexable);
                         HandleIndexableToUpdate(dataUriBucketDictionary, key, indexable);
                     }
@@ -45,11 +53,32 @@
                     select x).ToArray();
         }
 
+
+        // Sitecore.Support.335146+++
+        private bool IsValid(ItemRemoteEventBase remoteEvent)
+        {
+            if (remoteEvent is SavedItemRemoteEvent)
+            {
+                SavedItemRemoteEvent savedItemRemoteEvent = remoteEvent as SavedItemRemoteEvent;
+
+                if (savedItemRemoteEvent.VersionNumber == 0)
+                {
+                    Sitecore.Diagnostics.Log.Debug("[Sitecore.Support.335146][OnPublishEndAsynchronousStrategy] SavedItemRemoteEvent is skipped as invalid:" + savedItemRemoteEvent.ItemName + ", " + savedItemRemoteEvent.ItemId + ", " + savedItemRemoteEvent.VersionNumber + ", " + savedItemRemoteEvent.LanguageName, this);
+
+                    return false;
+                }
+            }
+
+            return true;
+        }
+        // Sitecore.Support.335146---
+
         private void UpdateIndexableInfo(ItemRemoteEventBase instanceData, IndexableInfo indexable)
         {
             if (instanceData is SavedItemRemoteEvent)
             {
                 SavedItemRemoteEvent obj = instanceData as SavedItemRemoteEvent;
+
                 if (obj.IsSharedFieldChanged)
                 {
                     indexable.IsSharedFieldChanged = true;

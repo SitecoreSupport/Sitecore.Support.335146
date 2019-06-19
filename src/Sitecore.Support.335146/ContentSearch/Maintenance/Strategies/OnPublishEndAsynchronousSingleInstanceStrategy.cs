@@ -10,6 +10,8 @@
 
     public class OnPublishEndAsynchronousSingleInstanceStrategy : OnPublishEndAsynchronousStrategy
     {
+
+
         public OnPublishEndAsynchronousSingleInstanceStrategy(string database) : base(database)
         {
         }
